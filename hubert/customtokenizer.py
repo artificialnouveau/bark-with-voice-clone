@@ -12,7 +12,7 @@ import numpy
 import torch
 from torch import nn, optim
 from torch.serialization import MAP_LOCATION
-
+from typing import Optional
 
 class CustomTokenizer(nn.Module):
     def __init__(self, hidden_size=1024, input_size=768, output_size=10000, version=0):
@@ -116,9 +116,12 @@ class CustomTokenizer(nn.Module):
             model = CustomTokenizer()
         else:
             model = CustomTokenizer(data_from_model.hidden_size, data_from_model.input_size, data_from_model.output_size, data_from_model.version)
-        model.load_state_dict(torch.load(path))
-        if map_location:
-            model = model.to(map_location)
+        try:
+            model.load_state_dict(torch.load(path, map_location=torch.device('cpu')))
+        except:
+            model.load_state_dict(torch.load(path))
+            if map_location:
+                model = model.to(map_location)
         return model
 
 
@@ -150,7 +153,7 @@ class Data:
         return json.dumps(data)
 
 
-def auto_train(data_path, save_path='model.pth', load_model: str | None = None, save_epochs=1):
+def auto_train(data_path, save_path='model.pth', load_model: Optional[str] = None, save_epochs=1):
     data_x, data_y = [], []
 
     if load_model and os.path.isfile(load_model):
